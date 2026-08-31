@@ -167,6 +167,7 @@ function combinedInputs(){
     attackReleased:actions[i].attackReleased||pads[i].attackReleased,dashPressed:actions[i].dashPressed||pads[i].dashPressed}))}
 function resetActions(){for(const a of actions){a.jumpPressed=a.attackPressed=a.attackReleased=a.dashPressed=false}}
 function updateInterface(){
+  document.body.classList.toggle("game-active",game.state.running);
   ui.play.disabled=game.state.running;ui.pause.disabled=!game.state.running;ui.difficulty.disabled=game.mode===ARENA_MODES.PLAYER_VS_PLAYER;
   const panels=[...document.querySelectorAll(".touch-player")],labels=arenaLabels(game.mode);panels[0].classList.toggle("is-hidden",game.mode===ARENA_MODES.AI_VS_AI);panels[1].classList.toggle("is-hidden",game.mode!==ARENA_MODES.PLAYER_VS_PLAYER);
   panels.forEach((panel,index)=>panel.querySelector("strong").textContent=labels[index]+" · "+CHARACTERS[game.characters[index]].name);
@@ -200,6 +201,8 @@ for(const button of document.querySelectorAll("[data-action]")){
     else if(action==="attack"){actions[player].attackPressed=true;touch[player].attackHeld=true}else if(action==="jump")actions[player].jumpPressed=true;else actions[player].dashPressed=true;if(!game.state.running)start()});
   const release=e=>{e.preventDefault();if(action==="left"||action==="right")touch[player][action]=false;if(action==="attack"){touch[player].attackHeld=false;actions[player].attackReleased=true}};
   button.addEventListener("pointerup",release);button.addEventListener("pointercancel",release);
+  button.addEventListener("contextmenu",e=>e.preventDefault());
+  button.addEventListener("selectstart",e=>e.preventDefault());
 }
 window.addEventListener("playground:replay",()=>{window.Playground?.reset();openFighterSelection("Choisissez les combattants pour la revanche.",true)});
 window.addEventListener("blur",clearInputs);window.addEventListener("resize",configureCanvas,{passive:true});window.addEventListener("playground:quality",()=>{configureCanvas();render()});window.addEventListener("gamepadconnected",()=>announce("Manette connectée."));

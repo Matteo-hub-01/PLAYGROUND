@@ -113,3 +113,11 @@ test("les raquettes restent dans le terrain", () => {
   assert.equal(game.state.leftY, 0);
   assert.equal(game.state.rightY, game.config.height - game.config.paddleHeight);
 });
+
+test("la vitesse de Pong reste jouable pour un humain", () => {
+  const game = gameWithFixedRandom();
+  assert.equal(game.config.initialBallSpeed, 300);
+  assert.ok(game.config.paddleHeight >= 120);
+  assert.ok(game.config.speedIncrease <= 1.08);
+  assert.ok(game.config.maxBallSpeed <= 800);
+});

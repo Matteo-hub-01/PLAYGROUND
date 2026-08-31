@@ -134,6 +134,7 @@ function announce(message) {
 
 function updateInterface() {
   const running = game.state.running;
+  document.body.classList.toggle("game-active", running);
   playButton.disabled = running;
   pauseButton.disabled = !running;
   playButton.setAttribute("aria-pressed", String(running));
@@ -315,6 +316,7 @@ function updatePointer(event) {
 }
 
 canvas.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
   canvas.setPointerCapture(event.pointerId);
   updatePointer(event);
   if (!game.state.running) startGame();
@@ -330,6 +332,8 @@ function releasePointer(event) {
 }
 canvas.addEventListener("pointerup", releasePointer);
 canvas.addEventListener("pointercancel", releasePointer);
+canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+canvas.addEventListener("selectstart", (event) => event.preventDefault());
 
 window.addEventListener("playground:replay",()=>{window.Playground?.reset();game.newGame();clearInput();updateInterface();render()});
 window.addEventListener("blur", clearInput);

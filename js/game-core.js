@@ -14,13 +14,13 @@ export const DEFAULT_CONFIG = Object.freeze({
   width: 800,
   height: 600,
   paddleWidth: 12,
-  paddleHeight: 104,
-  paddleSpeed: 520,
-  ballRadius: 10,
-  initialBallSpeed: 420,
-  minimumVerticalSpeed: 90,
-  speedIncrease: 1.20,
-  maxBallSpeed: 2000,
+  paddleHeight: 120,
+  paddleSpeed: 600,
+  ballRadius: 12,
+  initialBallSpeed: 300,
+  minimumVerticalSpeed: 70,
+  speedIncrease: 1.07,
+  maxBallSpeed: 780,
   serveDelay: 2.4
 });
 

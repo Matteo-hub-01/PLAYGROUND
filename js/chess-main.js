@@ -67,6 +67,8 @@ function handleSquare(index){
   selected=piece&&pieceColor(piece)===state.turn?index:null;renderBoard();
 }
 boardElement.addEventListener("click",event=>{const square=event.target.closest(".square");if(square)handleSquare(Number(square.dataset.index))});
+boardElement.addEventListener("contextmenu",event=>event.preventDefault());
+boardElement.addEventListener("selectstart",event=>event.preventDefault());
 promotionDialog.addEventListener("close",()=>{promotionPending=null});
 
 function commitMove(move){
