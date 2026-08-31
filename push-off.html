@@ -20,7 +20,7 @@
     <section id="menu-panel" class="menu-panel" aria-label="Menu du jeu">
       <div class="toolbar">
         <label><span>Mode</span><select id="mode-select">
-          <option value="player-vs-ai">Joueur contre IA</option><option value="player-vs-player">Deux joueurs</option><option value="ai-vs-ai">IA contre IA</option>
+          <option value="player-vs-ai">Joueur contre IA</option><option value="player-vs-player">Deux joueurs</option><option value="online">En ligne · 2 appareils</option><option value="ai-vs-ai">IA contre IA</option>
         </select></label>
         <label><span>Difficulté</span><select id="difficulty-select">
           <option value="easy">Facile</option><option value="normal" selected>Normale</option><option value="hard">Difficile</option>
@@ -42,6 +42,7 @@
     </section>
 
 
+    <section id="online-panel" class="online-panel" hidden aria-label="Salon en ligne"><button id="create-room" type="button">Créer un salon</button><span>ou</span><input id="room-code" maxlength="6" autocomplete="off" placeholder="CODE À 6 CARACTÈRES" aria-label="Code du salon"><button id="join-room" type="button">Rejoindre</button><p id="room-status" aria-live="polite">Créez un salon ou entrez le code reçu.</p></section>
     <section id="fighter-select" class="fighter-select" aria-labelledby="fighter-select-title">
       <header class="fighter-select-header">
         <div><p class="eyebrow">Sélection des combattants</p><h2 id="fighter-select-title">Choisissez votre personnage</h2></div>

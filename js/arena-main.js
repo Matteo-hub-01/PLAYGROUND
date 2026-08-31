@@ -1,4 +1,5 @@
 import{ARENA_MODES,ARENAS,CHARACTERS,ArenaGame,arenaLabels}from"./arena-core.js";
+import{OnlineRoom}from"./online-room.js";
 const $=s=>document.querySelector(s),canvas=$("#arena-canvas"),ctx=canvas.getContext("2d"),game=new ArenaGame();
 const ui={play:$("#play-button"),pause:$("#pause-button"),rematch:$("#rematch-button"),fullscreen:$("#fullscreen-button"),
   
@@ -8,12 +9,14 @@ const ui={play:$("#play-button"),pause:$("#pause-button"),rematch:$("#rematch-bu
   bindingGrid:$("#binding-grid"),resetBindings:$("#reset-bindings"),gamepad:$("#gamepad-status"),
   fighterSelect:$("#fighter-select"),confirmFighters:$("#confirm-fighters"),fighterStatus:$("#fighter-select-status"),
   characterGrids:[$("#character-grid-1"),$("#character-grid-2")],characterChoices:[$("#fighter-choice-1"),$("#fighter-choice-2")],
-  aiRandom:[$("#ai-random-1"),$("#ai-random-2")]
+  aiRandom:[$("#ai-random-1"),$("#ai-random-2")],onlinePanel:$("#online-panel"),roomCode:$("#room-code"),roomStatus:$("#room-status")
 };
 const defaults={p1Left:"q",p1Right:"d",p1Jump:"z",p1Attack:"s",p1Dash:"a",
   p2Left:"ArrowLeft",p2Right:"ArrowRight",p2Jump:"ArrowUp",p2Attack:"ArrowDown",p2Dash:"ShiftRight"};
 let bindings=loadBindings(),listeningBinding=null,audioContext=null,lastTime=performance.now(),lastMessage="",selectedCharacters=[ui.character1.value,ui.character2.value],selectionConfirmed=false;
 let particles=[],trails=[],shake=0,flash=0;
+let online=false,remoteInput={},lastOnlineSend=0;const remoteSequence={jump:0,attack:0,release:0,dash:0},outgoingSequence={jump:0,attack:0,release:0,dash:0};
+const room=new OnlineRoom("push-off",(payload,meta)=>{if(meta.error){ui.roomStatus.textContent=meta.error;return}ui.roomStatus.textContent=meta.connected?`Salon ${room.code} · adversaire connecté`:`Salon ${room.code} · en attente du joueur 2…`;if(room.role==="guest"&&payload?.state){game.state=payload.state;game.arena=payload.arena||game.arena;game.characters=payload.characters||game.characters;selectedCharacters=[...game.characters];selectionConfirmed=Boolean(payload.selectionConfirmed);ui.fighterSelect.hidden=true;render();updateInterface()}if(room.role==="host"&&payload?.controls){const c=payload.controls,s=payload.sequence||{};remoteInput={...c,jumpPressed:s.jump!==remoteSequence.jump,attackPressed:s.attack!==remoteSequence.attack,attackReleased:s.release!==remoteSequence.release,dashPressed:s.dash!==remoteSequence.dash};Object.assign(remoteSequence,s);if(payload.start&&selectionConfirmed&&!game.state.running)start()}});
 const keys=new Set(),touch=[{left:false,right:false,attackHeld:false},{left:false,right:false,attackHeld:false}];
 const actions=[{jumpPressed:false,attackPressed:false,attackReleased:false,dashPressed:false},{jumpPressed:false,attackPressed:false,attackReleased:false,dashPressed:false}];
 const gamepadPrevious=[[],[]];
@@ -168,20 +171,23 @@ function combinedInputs(){
 function resetActions(){for(const a of actions){a.jumpPressed=a.attackPressed=a.attackReleased=a.dashPressed=false}}
 function updateInterface(){
   document.body.classList.toggle("game-active",game.state.running);
-  ui.play.disabled=game.state.running;ui.pause.disabled=!game.state.running;ui.difficulty.disabled=game.mode===ARENA_MODES.PLAYER_VS_PLAYER;
-  const panels=[...document.querySelectorAll(".touch-player")],labels=arenaLabels(game.mode);panels[0].classList.toggle("is-hidden",game.mode===ARENA_MODES.AI_VS_AI);panels[1].classList.toggle("is-hidden",game.mode!==ARENA_MODES.PLAYER_VS_PLAYER);
+  ui.play.disabled=game.state.running;ui.pause.disabled=!game.state.running||online&&room.role==="guest";ui.difficulty.disabled=game.mode===ARENA_MODES.PLAYER_VS_PLAYER;
+  ui.onlinePanel.hidden=!online;const panels=[...document.querySelectorAll(".touch-player")],labels=arenaLabels(game.mode);panels[0].classList.toggle("is-hidden",game.mode===ARENA_MODES.AI_VS_AI||online&&room.role==="guest");panels[1].classList.toggle("is-hidden",game.mode!==ARENA_MODES.PLAYER_VS_PLAYER||online&&room.role!=="guest");
   panels.forEach((panel,index)=>panel.querySelector("strong").textContent=labels[index]+" · "+CHARACTERS[game.characters[index]].name);
   ui.instructions.textContent=game.mode===ARENA_MODES.PLAYER_VS_PLAYER?"J1 : "+prettyKey(bindings.p1Left)+"/"+prettyKey(bindings.p1Right)+", "+prettyKey(bindings.p1Jump)+" saut, "+prettyKey(bindings.p1Attack)+" attaque, "+prettyKey(bindings.p1Dash)+" dash · J2 : flèches + "+prettyKey(bindings.p2Dash)+" dash":
-    game.mode===ARENA_MODES.AI_VS_AI?"Mode automatique : arène choisie aléatoirement à chaque partie.":"Joueur : "+prettyKey(bindings.p1Left)+"/"+prettyKey(bindings.p1Right)+", "+prettyKey(bindings.p1Jump)+" saut, "+prettyKey(bindings.p1Attack)+" attaque, "+prettyKey(bindings.p1Dash)+" dash.";
+    game.mode===ARENA_MODES.AI_VS_AI?"Mode automatique : arène choisie aléatoirement à chaque partie.":"Joueur : "+prettyKey(bindings.p1Left)+"/"+prettyKey(bindings.p1Right)+", "+prettyKey(bindings.p1Jump)+" saut, "+prettyKey(bindings.p1Attack)+" attaque, "+prettyKey(bindings.p1Dash)+" dash.";if(online)ui.instructions.textContent=room.role==="guest"?"Vous contrôlez le combattant rose (joueur 2).":"Vous contrôlez le combattant vert (joueur 1). Partagez le code du salon.";
 }
 function randomArenaForAI(){if(game.mode!==ARENA_MODES.AI_VS_AI)return;const names=Object.keys(ARENAS),choice=names[Math.floor(Math.random()*names.length)];ui.arena.value=choice;game.setArena(choice)}
-function start(){if(!selectionConfirmed){openFighterSelection();return}window.Playground?.start();window.Playground?.setPaused(false);getAudio();game.play();canvas.focus({preventScroll:true});updateInterface()}
+function start(){if(online&&room.role==="guest"){room.send({controls:{},sequence:outgoingSequence,start:true});ui.roomStatus.textContent=`Salon ${room.code} · demande de démarrage envoyée`;return}if(!selectionConfirmed){openFighterSelection();return}window.Playground?.start();window.Playground?.setPaused(false);getAudio();game.play();canvas.focus({preventScroll:true});updateInterface()}
+function onlineState(){return{state:game.state,arena:game.arena,characters:game.characters,selectionConfirmed}}
+async function enterRoom(action){try{const info=action==="create"?await room.create():await room.join(ui.roomCode.value);online=true;ui.mode.value="online";game.setMode(ARENA_MODES.PLAYER_VS_PLAYER);ui.roomCode.value=info.code;ui.roomStatus.textContent=`Code ${info.code} · ${info.role==="host"?"vous êtes le joueur 1":"vous êtes le joueur 2"}`;if(info.role==="host"){openFighterSelection("Choisissez les deux combattants puis partagez le code.");room.send(onlineState())}else{ui.fighterSelect.hidden=true;selectionConfirmed=false}updateInterface()}catch(error){ui.roomStatus.textContent=error.message}}
 function pauseGame(message="Partie en pause."){game.pause();window.Playground?.setPaused(true);clearInputs();updateInterface();announce(message);render()}
 ui.play.addEventListener("click",start);ui.pause.addEventListener("click",()=>pauseGame());ui.confirmFighters.addEventListener("click",confirmFighterSelection);
+$("#create-room").addEventListener("click",()=>enterRoom("create"));$("#join-room").addEventListener("click",()=>enterRoom("join"));
 ui.rematch.addEventListener("click",()=>{window.Playground?.reset();openFighterSelection("Choisissez de nouveaux combattants pour la revanche.",true)});
 ui.fullscreen.addEventListener("click",async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{announce("Plein ecran indisponible sur cet appareil.")}});
 document.addEventListener("fullscreenchange",()=>{const active=Boolean(document.fullscreenElement);ui.fullscreen.textContent=active?"⛶ Quitter le plein écran":"⛶ Plein écran";ui.fullscreen.setAttribute("aria-pressed",String(active));configureCanvas();render()});
-ui.mode.addEventListener("change",()=>{window.Playground?.reset();game.setMode(ui.mode.value);clearInputs();openFighterSelection("Mode changé : choisissez les combattants.")});
+ui.mode.addEventListener("change",()=>{window.Playground?.reset();online=ui.mode.value==="online";if(!online)room.close();game.setMode(online?ARENA_MODES.PLAYER_VS_PLAYER:ui.mode.value);clearInputs();openFighterSelection("Mode changé : choisissez les combattants.")});
 ui.difficulty.addEventListener("change",()=>game.setDifficulty(ui.difficulty.value));ui.arena.addEventListener("change",()=>game.setArena(ui.arena.value));
 ui.character1.addEventListener("change",()=>{selectedCharacters[0]=ui.character1.value;renderFighterSelection()});ui.character2.addEventListener("change",()=>{selectedCharacters[1]=ui.character2.value;renderFighterSelection()});
 ui.lives.addEventListener("change",()=>{game.config.startingLives=Number(ui.lives.value);game.newRound();updateInterface()});ui.items.addEventListener("change",()=>game.setItemsEnabled(ui.items.checked));ui.sound.addEventListener("change",()=>{if(ui.sound.checked)beep(440,.08)});
@@ -207,5 +213,5 @@ for(const button of document.querySelectorAll("[data-action]")){
 window.addEventListener("playground:replay",()=>{window.Playground?.reset();openFighterSelection("Choisissez les combattants pour la revanche.",true)});
 window.addEventListener("blur",clearInputs);window.addEventListener("resize",configureCanvas,{passive:true});window.addEventListener("playground:quality",()=>{configureCanvas();render()});window.addEventListener("gamepadconnected",()=>announce("Manette connectée."));
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&game.state.running)pauseGame("Partie mise en pause.")});
-function frame(timestamp){const dt=Math.min((timestamp-lastTime)/1000,.05);lastTime=timestamp;window.Playground?.frame(dt);if(game.state.running){game.update(dt,combinedInputs());resetActions();processEvents();updateInterface();render(dt)}requestAnimationFrame(frame)}
+function frame(timestamp){const dt=Math.min((timestamp-lastTime)/1000,.05);lastTime=timestamp;window.Playground?.frame(dt);const inputs=combinedInputs();if(online&&room.role==="guest"){const control=inputs[1];if(control.jumpPressed)outgoingSequence.jump++;if(control.attackPressed)outgoingSequence.attack++;if(control.attackReleased)outgoingSequence.release++;if(control.dashPressed)outgoingSequence.dash++;if(timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({controls:{left:control.left,right:control.right,attackHeld:control.attackHeld},sequence:outgoingSequence})}}else if(game.state.running){game.update(dt,online?[inputs[0],remoteInput]:inputs);remoteInput.jumpPressed=remoteInput.attackPressed=remoteInput.attackReleased=remoteInput.dashPressed=false;processEvents();updateInterface();render(dt);if(online&&timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send(onlineState())}}resetActions();requestAnimationFrame(frame)}
 renderBindings();configureCanvas();game.consumeEvents();renderFighterSelection();openFighterSelection("Choisissez votre combattant pour commencer.");render();requestAnimationFrame(frame);

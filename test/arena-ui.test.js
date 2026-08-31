@@ -34,3 +34,7 @@ test("les trois nouveaux designs et effets d attaque sont rendus",()=>{
   for(const id of["ember","volt","nova"])assert.match(styles,new RegExp('data-character="'+id+'"'));
   for(const style of["firewave","rush","gravity"])assert.match(main,new RegExp('attackStyle==="'+style+'"'));
 });
+
+test("le mode en ligne expose les salons à deux appareils",()=>{
+  assert.match(html,/value="online"/);for(const id of["online-panel","create-room","room-code","join-room"])assert.match(html,new RegExp(`id="${id}"`));assert.match(main,/OnlineRoom/);assert.match(main,/push-off/);
+});
