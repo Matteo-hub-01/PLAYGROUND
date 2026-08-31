@@ -48,6 +48,8 @@ canvas {
   background: #02040a; touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 .game-info { display: flex; justify-content: space-between; gap: 1rem; margin-top: .8rem; color: var(--muted); font-size: .9rem; }
+.online-panel{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin:0 0 .75rem;padding:.75rem;border:1px solid var(--border);border-radius:.75rem;background:var(--surface)}
+.online-panel[hidden]{display:none}.online-panel input{min-height:44px;width:14rem;padding:.65rem .75rem;border:1px solid var(--border);border-radius:.65rem;color:var(--text);background:#080c15;text-transform:uppercase;letter-spacing:.12em}.online-panel p{flex-basis:100%;margin:0;color:var(--muted);font-size:.85rem}.room-or{color:var(--muted)}
 .game-info p { margin: 0; }
 .shortcut { text-align: right; }
 .sr-only {
@@ -76,7 +78,7 @@ canvas {
   .header-nav { gap: .35rem; }
   .home-link { display: inline-flex; align-items: center; min-height: 48px; padding: .5rem; }
   .game-shell { border-radius: .7rem; }
-  canvas { min-height: min(68dvh, 600px); object-fit: fill; }
+  canvas { min-height: 0; width: 100%; height: auto; max-height: 68dvh; aspect-ratio: 4 / 3; object-fit: contain; }
   body.game-active .settings { display: none; }
   body.game-active .actions { position: sticky; z-index: 5; top: 0; padding: .3rem 0; background: var(--background); }
   body.game-active .game-info { font-size: .8rem; }

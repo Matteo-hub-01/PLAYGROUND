@@ -1,4 +1,5 @@
 import { GAME_MODES, PongGame, playerLabels } from "./game-core.js";
+import { OnlineRoom } from "./online-room.js";
 
 const canvas = document.querySelector("#pong-canvas");
 const context = canvas.getContext("2d");
@@ -11,6 +12,7 @@ const winningScoreSelect = document.querySelector("#winning-score-select");
 const soundToggle = document.querySelector("#sound-toggle");
 const instructions = document.querySelector("#instructions");
 const liveStatus = document.querySelector("#live-status");
+const onlinePanel=document.querySelector("#online-panel"),roomCode=document.querySelector("#room-code"),roomStatus=document.querySelector("#room-status");
 
 const game = new PongGame();
 const input = {
@@ -25,6 +27,13 @@ const pointerSides = new Map();
 let audioContext = null;
 let lastFrameTime = performance.now();
 let previousSummary = "";
+let online=false,remoteTarget=null,lastOnlineSend=0;
+const room=new OnlineRoom("pong",(payload,meta)=>{
+  if(meta.error){roomStatus.textContent=meta.error;return}
+  roomStatus.textContent=meta.connected?`Salon ${room.code} · adversaire connecté`:`Salon ${room.code} · en attente du second joueur…`;
+  if(room.role==="guest"&&payload?.state){game.state={...payload.state};game.winningScore=payload.winningScore||game.winningScore;render();updateInterface()}
+  if(room.role==="host"&&Number.isFinite(payload?.target))remoteTarget=payload.target;
+});
 
 function configureCanvas() {
   const cap=window.Playground?.quality==="low"?1:window.Playground?.quality==="medium"?1.5:2;
@@ -140,8 +149,11 @@ function updateInterface() {
   playButton.setAttribute("aria-pressed", String(running));
   pauseButton.setAttribute("aria-pressed", String(!running));
   difficultySelect.disabled = game.mode === GAME_MODES.PLAYER_VS_PLAYER;
+  onlinePanel.hidden=modeSelect.value!=="online";
 
-  if (game.mode === GAME_MODES.PLAYER_VS_PLAYER) {
+  if (online) {
+    instructions.textContent=room.role==="guest"?"Vous contrôlez la raquette de droite. Glissez sur le terrain.":"Vous contrôlez la raquette de gauche. Partagez le code affiché.";
+  } else if (game.mode === GAME_MODES.PLAYER_VS_PLAYER) {
     instructions.textContent = "Joueur 1 : W / S · Joueur 2 : ↑ / ↓ · Sur écran tactile : une moitié du terrain par joueur.";
   } else if (game.mode === GAME_MODES.AI_VS_AI) {
     instructions.textContent = "Partie automatique : observez les deux IA s’affronter.";
@@ -240,11 +252,15 @@ newGameButton.addEventListener("click", () => {
 
 modeSelect.addEventListener("change", () => {
   window.Playground?.reset();
-  game.setMode(modeSelect.value);
+  online=modeSelect.value==="online";room.close();remoteTarget=null;
+  game.setMode(online?GAME_MODES.PLAYER_VS_PLAYER:modeSelect.value);
   clearInput();
   updateInterface();
   announce("Mode changé. Nouvelle partie prête.");
 });
+async function enterRoom(action){try{const info=action==="create"?await room.create():await room.join(roomCode.value);online=true;game.setMode(GAME_MODES.PLAYER_VS_PLAYER);roomCode.value=info.code;roomStatus.textContent=`Code ${info.code} · ${info.role==="host"?"partagez-le":"connecté, vous jouez à droite"}`;updateInterface();if(info.role==="host")room.send({state:game.state,winningScore:game.winningScore})}catch(error){roomStatus.textContent=error.message}}
+document.querySelector("#create-room").addEventListener("click",()=>enterRoom("create"));
+document.querySelector("#join-room").addEventListener("click",()=>enterRoom("join"));
 
 difficultySelect.addEventListener("change", () => {
   game.setDifficulty(difficultySelect.value);
@@ -308,7 +324,7 @@ function pointerPosition(event) {
 function updatePointer(event) {
   if (game.mode === GAME_MODES.AI_VS_AI) return;
   const position = pointerPosition(event);
-  const side = pointerSides.get(event.pointerId) ||
+  const side = online?(room.role==="guest"?"right":"left"):pointerSides.get(event.pointerId) ||
     (game.mode === GAME_MODES.PLAYER_VS_PLAYER && position.x > game.config.width / 2 ? "right" : "left");
   pointerSides.set(event.pointerId, side);
   if (side === "left") input.leftTarget = position.y;
@@ -348,7 +364,11 @@ function animationFrame(timestamp) {
   lastFrameTime = timestamp;
   window.Playground?.frame(delta);
   if(game.state.running){
-    game.update(delta, input);
+    if(!online||room.role==="host"){
+      if(online)input.rightTarget=remoteTarget;
+      game.update(delta,input);
+      if(online&&timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({state:game.state,winningScore:game.winningScore})}
+    }else if(timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({target:input.rightTarget})}
     processEvents();
     updateInterface();
     render();

@@ -5,9 +5,9 @@ export const GAME_MODES = Object.freeze({
 });
 
 export const DIFFICULTIES = Object.freeze({
-  easy: Object.freeze({ speed: 320, reaction: 0.18, error: 72 }),
-  normal: Object.freeze({ speed: 440, reaction: 0.10, error: 36 }),
-  hard: Object.freeze({ speed: 570, reaction: 0.055, error: 13 })
+  easy: Object.freeze({ speed: 250, reaction: 0.28, error: 115 }),
+  normal: Object.freeze({ speed: 345, reaction: 0.18, error: 68 }),
+  hard: Object.freeze({ speed: 465, reaction: 0.10, error: 32 })
 });
 
 export const DEFAULT_CONFIG = Object.freeze({

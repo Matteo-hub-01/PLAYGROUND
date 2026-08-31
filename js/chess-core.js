@@ -129,5 +129,7 @@ export function chooseAIMove(state,depth=2,random=Math.random){
   const moves=orderedMoves(state);if(!moves.length)return null;let bestScore=state.turn==="w"?-Infinity:Infinity,best=[];
   for(const move of moves){const score=minimax(makeMove(state,move),Math.max(0,depth-1),-Infinity,Infinity);
     if(state.turn==="w"?(score>bestScore):(score<bestScore)){bestScore=score;best=[move]}else if(score===bestScore)best.push(move)}
+  const mistakeChance=depth<=1?.42:depth===2?.16:0;
+  if(mistakeChance&&random()<mistakeChance){const candidates=moves.filter(move=>!move.capture);const pool=candidates.length?candidates:moves;return pool[Math.floor(random()*pool.length)]}
   return best[Math.floor(random()*best.length)];
 }

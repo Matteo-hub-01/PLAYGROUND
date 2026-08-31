@@ -22,9 +22,9 @@
       <aside class="panel settings-panel">
         <div class="field"><label for="game-mode">Mode de jeu</label><select id="game-mode">
           <option value="player-vs-ai">Joueur contre IA</option>
-          <option value="player-vs-player">Joueur contre joueur</option>
+          <option value="player-vs-player">Joueur contre joueur</option><option value="online">En ligne · 2 appareils</option>
           <option value="ai-vs-ai">IA contre IA</option>
-        </select></div>
+        </select></div><div id="online-panel" class="online-panel" hidden><button id="create-room" class="secondary-button" type="button">Créer un salon</button><input id="room-code" maxlength="6" autocomplete="off" placeholder="CODE À 6 CARACTÈRES"><button id="join-room" class="secondary-button" type="button">Rejoindre</button><small id="room-status" aria-live="polite">Partagez le code avec l’autre joueur.</small></div>
         <div class="field"><label for="difficulty">Niveau de l’IA</label><select id="difficulty">
           <option value="1">Facile</option><option value="2" selected>Normal</option><option value="3">Difficile</option>
         </select></div>
