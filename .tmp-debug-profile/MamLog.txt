@@ -1,0 +1,15 @@
+[2026-08-28T07:59:59.363Z] [INFO] ========================================================================================================================
+[2026-08-28T07:59:59.363Z] [INFO] Initializing MAM Client.
+App: com.microsoft.edge 151.0.4129.107
+SDK: 2.1.367.0
+OS: windows 10.0.26200.9106
+DeviceType: Desktop
+Manufacturer: Dell Inc.
+Model: Latitude 5440
+Telemetry: yes
+Managed device support: enabled
+[2026-08-28T07:59:59.387Z] [INFO] Telemetry session 576cf9fe-9ea7-4270-af9e-d4201022eada.
+[2026-08-28T07:59:59.389Z] [INFO] Initializing cache (v1).
+[2026-08-28T08:00:00.761Z] [INFO] Shutting down.
+[2026-08-28T08:00:00.761Z] [INFO] Stopping the task scheduler and canceling any outstanding work items...
+[2026-08-28T08:00:00.761Z] [INFO] Task scheduler has stopped, and all work has been canceled.

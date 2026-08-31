@@ -1,0 +1,1 @@
+{"name":"Playground - Jeux de duel","short_name":"Playground","description":"Push Off, Pong, Echecs et Turbo Circuit dans une seule application.","start_url":"index.html","display":"standalone","background_color":"#0d1220","theme_color":"#ffd45a","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

@@ -1,0 +1,5 @@
+2026/08/28-14:09:30.188 764c Creating DB C:\wamp64\www\test\.edge-drift-check\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/08/28-14:09:30.229 764c Reusing MANIFEST C:\wamp64\www\test\.edge-drift-check\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/08/28-14:09:30.710 33bc Level-0 table #5: started
+2026/08/28-14:09:30.728 33bc Level-0 table #5: 683273 bytes OK
+2026/08/28-14:09:30.738 33bc Delete type=0 #3

@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pong</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin: 15px 0 5px;
+    }
+
+    #controls {
+      display: flex;
+      gap: 10px;
+      margin: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+
+      border: 2px solid white;
+      border-radius: 5px;
+
+      background: black;
+      color: white;
+
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: white;
+      color: black;
+    }
+
+    canvas {
+      background: black;
+      border: 2px solid white;
+    }
+
+    #instructions {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #aaa;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🏓 PONG</h1>
+
+<div id="controls">
+
+  <button id="playButton">
+    ▶ Play
+  </button>
+
+  <button id="pauseButton">
+    ⏸ Pause
+  </button>
+
+  <button id="modeButton">
+    🤖 Mode : Joueur vs IA
+  </button>
+
+</div>
+
+<canvas id="pongCanvas"></canvas>
+
+<div id="instructions">
+  Joueur : ↑ / ↓
+</div>
+
+
+<script>
+
+const canvas = document.getElementById("pongCanvas");
+const ctx = canvas.getContext("2d");
+
+const playButton =
+  document.getElementById("playButton");
+
+const pauseButton =
+  document.getElementById("pauseButton");
+
+const modeButton =
+  document.getElementById("modeButton");
+
+const instructions =
+  document.getElementById("instructions");
+
+
+// ======================================================
+// CANVAS
+// ======================================================
+
+canvas.width = 800;
+canvas.height = 600;
+
+
+// ======================================================
+// CONFIGURATION
+// ======================================================
+
+const ballRadius = 10;
+
+const paddleWidth = 10;
+const paddleHeight = 100;
+
+const paddleSpeed = 100;
+
+const initialBallSpeed = 4;
+
+// +4% à chaque coup
+const speedIncrease = 1.20;
+
+// vitesse maximale
+const maxBallSpeed = 1000;
+
+
+// ======================================================
+// MODES
+// ======================================================
+
+/*
+
+0 = Joueur vs IA
+
+1 = Joueur vs Joueur
+
+2 = IA vs IA
+
+*/
+
+let gameMode = 0;
+
+
+// ======================================================
+// ETAT
+// ======================================================
+
+let gameRunning = false;
+
+let rallyCount = 0;
+
+
+// ======================================================
+// BALLE
+// ======================================================
+
+let ballX =
+  canvas.width / 2;
+
+let ballY =
+  canvas.height / 2;
+
+let ballSpeedX =
+  initialBallSpeed;
+
+let ballSpeedY = 2;
+
+
+// ======================================================
+// RAQUETTES
+// ======================================================
+
+let player1Y =
+  (canvas.height - paddleHeight) / 2;
+
+let player2Y =
+  (canvas.height - paddleHeight) / 2;
+
+
+// ======================================================
+// SCORE
+// ======================================================
+
+let player1Score = 0;
+let player2Score = 0;
+
+
+// ======================================================
+// CONTROLES
+// ======================================================
+
+let leftUpPressed = false;
+let leftDownPressed = false;
+
+let rightUpPressed = false;
+let rightDownPressed = false;
+
+
+// ======================================================
+// IA DROITE
+// ======================================================
+
+let rightAITargetY =
+  canvas.height / 2;
+
+let rightAIReactionCounter = 0;
+
+let rightAIError = 0;
+
+
+// ======================================================
+// IA GAUCHE
+// ======================================================
+
+let leftAITargetY =
+  canvas.height / 2;
+
+let leftAIReactionCounter = 0;
+
+let leftAIError = 0;
+
+
+// ======================================================
+// DESSIN BALLE
+// ======================================================
+
+function drawBall() {
+
+  ctx.beginPath();
+
+  ctx.arc(
+    ballX,
+    ballY,
+    ballRadius,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "white";
+
+  ctx.fill();
+
+  ctx.closePath();
+}
+
+
+// ======================================================
+// DESSIN RAQUETTE
+// ======================================================
+
+function drawPaddle(x, y) {
+
+  ctx.fillStyle = "white";
+
+  ctx.fillRect(
+    x,
+    y,
+    paddleWidth,
+    paddleHeight
+  );
+}
+
+
+// ======================================================
+// LIGNE CENTRALE
+// ======================================================
+
+function drawCenterLine() {
+
+  ctx.setLineDash([10, 10]);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    canvas.width / 2,
+    0
+  );
+
+  ctx.lineTo(
+    canvas.width / 2,
+    canvas.height
+  );
+
+  ctx.strokeStyle = "#555";
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+
+// ======================================================
+// SCORE
+// ======================================================
+
+function drawScore() {
+
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+
+  ctx.font = "25px Arial";
+
+
+  // joueur contre IA
+
+  if (gameMode === 0) {
+
+    ctx.fillText(
+      `Joueur : ${player1Score}`,
+      canvas.width / 4,
+      40
+    );
+
+    ctx.fillText(
+      `IA : ${player2Score}`,
+      canvas.width * 0.75,
+      40
+    );
+  }
+
+
+  // joueur contre joueur
+
+  else if (gameMode === 1) {
+
+    ctx.fillText(
+      `Joueur 1 : ${player1Score}`,
+      canvas.width / 4,
+      40
+    );
+
+    ctx.fillText(
+      `Joueur 2 : ${player2Score}`,
+      canvas.width * 0.75,
+      40
+    );
+  }
+
+
+  // IA contre IA
+
+  else {
+
+    ctx.fillText(
+      `IA 1 : ${player1Score}`,
+      canvas.width / 4,
+      40
+    );
+
+    ctx.fillText(
+      `IA 2 : ${player2Score}`,
+      canvas.width * 0.75,
+      40
+    );
+  }
+
+
+  ctx.font = "17px Arial";
+
+  ctx.fillText(
+    `Échanges : ${rallyCount}`,
+    canvas.width / 2,
+    40
+  );
+
+
+  ctx.font = "14px Arial";
+
+  ctx.fillText(
+    `Vitesse : ${Math.abs(ballSpeedX).toFixed(1)}`,
+    canvas.width / 2,
+    65
+  );
+}
+
+
+// ======================================================
+// PAUSE
+// ======================================================
+
+function drawPause() {
+
+  if (!gameRunning) {
+
+    ctx.fillStyle =
+      "rgba(0,0,0,0.55)";
+
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+
+    ctx.fillStyle = "white";
+
+    ctx.textAlign = "center";
+
+    ctx.font =
+      "bold 45px Arial";
+
+    ctx.fillText(
+      "PAUSE",
+      canvas.width / 2,
+      canvas.height / 2
+    );
+
+
+    ctx.font = "18px Arial";
+
+    ctx.fillText(
+      "Clique sur ▶ Play",
+      canvas.width / 2,
+      canvas.height / 2 + 40
+    );
+  }
+}
+
+
+// ======================================================
+// PREDICTION BALLE POUR L'IA DROITE
+// ======================================================
+
+function predictRightBallPosition() {
+
+  if (ballSpeedX <= 0) {
+
+    return canvas.height / 2;
+  }
+
+
+  const distance =
+    canvas.width -
+    paddleWidth -
+    ballX;
+
+
+  const time =
+    distance /
+    ballSpeedX;
+
+
+  let predictedY =
+    ballY +
+    ballSpeedY * time;
+
+
+  return calculateWallBounces(
+    predictedY
+  );
+}
+
+
+// ======================================================
+// PREDICTION BALLE POUR L'IA GAUCHE
+// ======================================================
+
+function predictLeftBallPosition() {
+
+  if (ballSpeedX >= 0) {
+
+    return canvas.height / 2;
+  }
+
+
+  const distance =
+    ballX -
+    paddleWidth;
+
+
+  const time =
+    distance /
+    Math.abs(ballSpeedX);
+
+
+  let predictedY =
+    ballY +
+    ballSpeedY * time;
+
+
+  return calculateWallBounces(
+    predictedY
+  );
+}
+
+
+// ======================================================
+// CALCUL REBONDS FUTURS
+// ======================================================
+
+function calculateWallBounces(predictedY) {
+
+  const minY =
+    ballRadius;
+
+  const maxY =
+    canvas.height -
+    ballRadius;
+
+
+  while (
+    predictedY < minY ||
+    predictedY > maxY
+  ) {
+
+    if (
+      predictedY < minY
+    ) {
+
+      predictedY =
+        minY +
+        (minY - predictedY);
+    }
+
+
+    if (
+      predictedY > maxY
+    ) {
+
+      predictedY =
+        maxY -
+        (predictedY - maxY);
+    }
+  }
+
+
+  return predictedY;
+}
+
+
+// ======================================================
+// IA DROITE
+// ======================================================
+
+function updateRightAI() {
+
+  rightAIReactionCounter++;
+
+
+  let reactionDelay = 10;
+
+
+  if (
+    ballX >
+    canvas.width * 0.5
+  ) {
+
+    reactionDelay = 6;
+  }
+
+
+  if (
+    ballX >
+    canvas.width * 0.75
+  ) {
+
+    reactionDelay = 3;
+  }
+
+
+  if (
+    rightAIReactionCounter >=
+    reactionDelay
+  ) {
+
+    rightAIReactionCounter = 0;
+
+
+    if (
+      ballSpeedX > 0
+    ) {
+
+      rightAITargetY =
+        predictRightBallPosition();
+
+
+      // petite erreur aléatoire
+
+      rightAIError =
+        Math.random() * 50 - 25;
+
+
+      rightAITargetY +=
+        rightAIError;
+
+    }
+
+    else {
+
+      rightAITargetY =
+        canvas.height / 2;
+    }
+  }
+
+
+  const center =
+    player2Y +
+    paddleHeight / 2;
+
+
+  const difference =
+    rightAITargetY -
+    center;
+
+
+  let aiSpeed =
+    4 +
+    Math.abs(ballSpeedX) *
+    0.23;
+
+
+  aiSpeed =
+    Math.min(
+      aiSpeed,
+      8
+    );
+
+
+  const deadZone = 7;
+
+
+  if (
+    difference >
+    deadZone
+  ) {
+
+    player2Y +=
+      aiSpeed;
+  }
+
+
+  else if (
+    difference <
+    -deadZone
+  ) {
+
+    player2Y -=
+      aiSpeed;
+  }
+
+
+  clampPaddles();
+}
+
+
+// ======================================================
+// IA GAUCHE
+// ======================================================
+
+function updateLeftAI() {
+
+  leftAIReactionCounter++;
+
+
+  let reactionDelay = 10;
+
+
+  if (
+    ballX <
+    canvas.width * 0.5
+  ) {
+
+    reactionDelay = 6;
+  }
+
+
+  if (
+    ballX <
+    canvas.width * 0.25
+  ) {
+
+    reactionDelay = 3;
+  }
+
+
+  if (
+    leftAIReactionCounter >=
+    reactionDelay
+  ) {
+
+    leftAIReactionCounter = 0;
+
+
+    if (
+      ballSpeedX < 0
+    ) {
+
+      leftAITargetY =
+        predictLeftBallPosition();
+
+
+      leftAIError =
+        Math.random() * 50 - 25;
+
+
+      leftAITargetY +=
+        leftAIError;
+
+    }
+
+    else {
+
+      leftAITargetY =
+        canvas.height / 2;
+    }
+  }
+
+
+  const center =
+    player1Y +
+    paddleHeight / 2;
+
+
+  const difference =
+    leftAITargetY -
+    center;
+
+
+  let aiSpeed =
+    4 +
+    Math.abs(ballSpeedX) *
+    0.23;
+
+
+  aiSpeed =
+    Math.min(
+      aiSpeed,
+      8
+    );
+
+
+  const deadZone = 7;
+
+
+  if (
+    difference >
+    deadZone
+  ) {
+
+    player1Y +=
+      aiSpeed;
+  }
+
+
+  else if (
+    difference <
+    -deadZone
+  ) {
+
+    player1Y -=
+      aiSpeed;
+  }
+
+
+  clampPaddles();
+}
+
+
+// ======================================================
+// LIMITES
+// ======================================================
+
+function clampPaddles() {
+
+  player1Y =
+    Math.max(
+      0,
+      Math.min(
+        canvas.height -
+        paddleHeight,
+        player1Y
+      )
+    );
+
+
+  player2Y =
+    Math.max(
+      0,
+      Math.min(
+        canvas.height -
+        paddleHeight,
+        player2Y
+      )
+    );
+}
+
+
+// ======================================================
+// AUGMENTATION DE VITESSE
+// ======================================================
+
+function increaseBallSpeed() {
+
+  rallyCount++;
+
+
+  ballSpeedX *=
+    speedIncrease;
+
+
+  ballSpeedY *=
+    1.025;
+
+
+  if (
+    Math.abs(ballSpeedX) >
+    maxBallSpeed
+  ) {
+
+    ballSpeedX =
+      Math.sign(ballSpeedX) *
+      maxBallSpeed;
+  }
+
+
+  if (
+    Math.abs(ballSpeedY) >
+    maxBallSpeed
+  ) {
+
+    ballSpeedY =
+      Math.sign(ballSpeedY) *
+      maxBallSpeed;
+  }
+}
+
+
+// ======================================================
+// COLLISIONS
+// ======================================================
+
+function paddleCollision() {
+
+
+  // RAQUETTE GAUCHE
+
+  if (
+
+    ballSpeedX < 0 &&
+
+    ballX - ballRadius <=
+    paddleWidth &&
+
+    ballY + ballRadius >=
+    player1Y &&
+
+    ballY - ballRadius <=
+    player1Y +
+    paddleHeight
+
+  ) {
+
+    ballX =
+      paddleWidth +
+      ballRadius;
+
+
+    const hitPosition =
+
+      (
+        ballY -
+        (
+          player1Y +
+          paddleHeight / 2
+        )
+      )
+
+      /
+
+      (paddleHeight / 2);
+
+
+    const speed =
+      Math.abs(ballSpeedX);
+
+
+    ballSpeedX =
+      speed;
+
+
+    ballSpeedY =
+      hitPosition *
+      Math.max(
+        4,
+        speed * 0.9
+      );
+
+
+    increaseBallSpeed();
+  }
+
+
+
+  // RAQUETTE DROITE
+
+  if (
+
+    ballSpeedX > 0 &&
+
+    ballX + ballRadius >=
+    canvas.width -
+    paddleWidth &&
+
+    ballY + ballRadius >=
+    player2Y &&
+
+    ballY - ballRadius <=
+    player2Y +
+    paddleHeight
+
+  ) {
+
+    ballX =
+      canvas.width -
+      paddleWidth -
+      ballRadius;
+
+
+    const hitPosition =
+
+      (
+        ballY -
+        (
+          player2Y +
+          paddleHeight / 2
+        )
+      )
+
+      /
+
+      (paddleHeight / 2);
+
+
+    const speed =
+      Math.abs(ballSpeedX);
+
+
+    ballSpeedX =
+      -speed;
+
+
+    ballSpeedY =
+      hitPosition *
+      Math.max(
+        4,
+        speed * 0.9
+      );
+
+
+    increaseBallSpeed();
+  }
+}
+
+
+// ======================================================
+// BALLE
+// ======================================================
+
+function updateBall() {
+
+  ballX +=
+    ballSpeedX;
+
+  ballY +=
+    ballSpeedY;
+
+
+  // haut
+
+  if (
+    ballY -
+    ballRadius <= 0
+  ) {
+
+    ballY =
+      ballRadius;
+
+    ballSpeedY =
+      Math.abs(ballSpeedY);
+  }
+
+
+  // bas
+
+  if (
+    ballY +
+    ballRadius >=
+    canvas.height
+  ) {
+
+    ballY =
+      canvas.height -
+      ballRadius;
+
+    ballSpeedY =
+      -Math.abs(ballSpeedY);
+  }
+
+
+  paddleCollision();
+
+
+  // point droite
+
+  if (
+    ballX +
+    ballRadius < 0
+  ) {
+
+    player2Score++;
+
+    resetBall(-1);
+  }
+
+
+  // point gauche
+
+  if (
+    ballX -
+    ballRadius >
+    canvas.width
+  ) {
+
+    player1Score++;
+
+    resetBall(1);
+  }
+}
+
+
+// ======================================================
+// RESET
+// ======================================================
+
+function resetBall(direction) {
+
+  ballX =
+    canvas.width / 2;
+
+  ballY =
+    canvas.height / 2;
+
+
+  rallyCount = 0;
+
+
+  ballSpeedX =
+    initialBallSpeed *
+    direction;
+
+
+  ballSpeedY =
+    Math.random() * 4 - 2;
+
+
+  if (
+    Math.abs(ballSpeedY) <
+    1.5
+  ) {
+
+    ballSpeedY =
+      ballSpeedY < 0
+        ? -1.5
+        : 1.5;
+  }
+}
+
+
+// ======================================================
+// UPDATE DES JOUEURS
+// ======================================================
+
+function updatePlayers() {
+
+
+  // ==================================
+  // JOUEUR VS IA
+  // ==================================
+
+  if (
+    gameMode === 0
+  ) {
+
+    if (
+      rightUpPressed
+    ) {
+
+      player1Y -=
+        paddleSpeed;
+    }
+
+
+    if (
+      rightDownPressed
+    ) {
+
+      player1Y +=
+        paddleSpeed;
+    }
+
+
+    updateRightAI();
+  }
+
+
+
+  // ==================================
+  // JOUEUR VS JOUEUR
+  // ==================================
+
+  else if (
+    gameMode === 1
+  ) {
+
+    if (
+      leftUpPressed
+    ) {
+
+      player1Y -=
+        paddleSpeed;
+    }
+
+
+    if (
+      leftDownPressed
+    ) {
+
+      player1Y +=
+        paddleSpeed;
+    }
+
+
+    if (
+      rightUpPressed
+    ) {
+
+      player2Y -=
+        paddleSpeed;
+    }
+
+
+    if (
+      rightDownPressed
+    ) {
+
+      player2Y +=
+        paddleSpeed;
+    }
+
+
+    clampPaddles();
+  }
+
+
+
+  // ==================================
+  // IA VS IA
+  // ==================================
+
+  else if (
+    gameMode === 2
+  ) {
+
+    updateLeftAI();
+
+    updateRightAI();
+  }
+}
+
+
+// ======================================================
+// CLAVIER
+// ======================================================
+
+document.addEventListener(
+  "keydown",
+  function(event) {
+
+
+    if (
+      event.key === "w" ||
+      event.key === "W"
+    ) {
+
+      leftUpPressed = true;
+    }
+
+
+    if (
+      event.key === "s" ||
+      event.key === "S"
+    ) {
+
+      leftDownPressed = true;
+    }
+
+
+    if (
+      event.key ===
+      "ArrowUp"
+    ) {
+
+      rightUpPressed = true;
+
+      event.preventDefault();
+    }
+
+
+    if (
+      event.key ===
+      "ArrowDown"
+    ) {
+
+      rightDownPressed = true;
+
+      event.preventDefault();
+    }
+
+
+    // espace = pause / play
+
+    if (
+      event.code === "Space"
+    ) {
+
+      gameRunning =
+        !gameRunning;
+
+      event.preventDefault();
+    }
+  }
+);
+
+
+document.addEventListener(
+  "keyup",
+  function(event) {
+
+
+    if (
+      event.key === "w" ||
+      event.key === "W"
+    ) {
+
+      leftUpPressed = false;
+    }
+
+
+    if (
+      event.key === "s" ||
+      event.key === "S"
+    ) {
+
+      leftDownPressed = false;
+    }
+
+
+    if (
+      event.key ===
+      "ArrowUp"
+    ) {
+
+      rightUpPressed = false;
+    }
+
+
+    if (
+      event.key ===
+      "ArrowDown"
+    ) {
+
+      rightDownPressed = false;
+    }
+  }
+);
+
+
+// ======================================================
+// PLAY
+// ======================================================
+
+playButton.addEventListener(
+  "click",
+  function() {
+
+    gameRunning = true;
+  }
+);
+
+
+// ======================================================
+// PAUSE
+// ======================================================
+
+pauseButton.addEventListener(
+  "click",
+  function() {
+
+    gameRunning = false;
+  }
+);
+
+
+// ======================================================
+// CHANGER DE MODE
+// ======================================================
+
+modeButton.addEventListener(
+  "click",
+  function() {
+
+
+    gameMode++;
+
+
+    if (
+      gameMode > 2
+    ) {
+
+      gameMode = 0;
+    }
+
+
+    // scores remis à zéro
+
+    player1Score = 0;
+    player2Score = 0;
+
+
+    // raquettes au centre
+
+    player1Y =
+      (canvas.height -
+      paddleHeight) / 2;
+
+    player2Y =
+      (canvas.height -
+      paddleHeight) / 2;
+
+
+    resetBall(
+      Math.random() > 0.5
+        ? 1
+        : -1
+    );
+
+
+    // ================================
+    // MODE 1
+    // ================================
+
+    if (
+      gameMode === 0
+    ) {
+
+      modeButton.textContent =
+        "🤖 Mode : Joueur vs IA";
+
+
+      instructions.innerHTML =
+        `
+        Joueur : <b>↑ / ↓</b>
+        &nbsp;&nbsp; | &nbsp;&nbsp;
+        Adversaire : <b>IA</b>
+        `;
+    }
+
+
+    // ================================
+    // MODE 2
+    // ================================
+
+    else if (
+      gameMode === 1
+    ) {
+
+      modeButton.textContent =
+        "👥 Mode : 2 joueurs";
+
+
+      instructions.innerHTML =
+        `
+        Joueur 1 : <b>W / S</b>
+        &nbsp;&nbsp; | &nbsp;&nbsp;
+        Joueur 2 : <b>↑ / ↓</b>
+        `;
+    }
+
+
+    // ================================
+    // MODE 3
+    // ================================
+
+    else if (
+      gameMode === 2
+    ) {
+
+      modeButton.textContent =
+        "🤖 VS 🤖 Mode : IA vs IA";
+
+
+      instructions.innerHTML =
+        `
+        <b>IA 1</b>
+        &nbsp;&nbsp; VS &nbsp;&nbsp;
+        <b>IA 2</b>
+        — mode automatique
+        `;
+    }
+  }
+);
+
+
+// ======================================================
+// DESSIN
+// ======================================================
+
+function draw() {
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  drawCenterLine();
+
+  drawBall();
+
+
+  drawPaddle(
+    0,
+    player1Y
+  );
+
+
+  drawPaddle(
+    canvas.width -
+    paddleWidth,
+    player2Y
+  );
+
+
+  drawScore();
+
+  drawPause();
+}
+
+
+// ======================================================
+// GAME LOOP
+// ======================================================
+
+function gameLoop() {
+
+  if (
+    gameRunning
+  ) {
+
+    updatePlayers();
+
+    updateBall();
+  }
+
+
+  draw();
+
+
+  requestAnimationFrame(
+    gameLoop
+  );
+}
+
+
+gameLoop();
+
+</script>
+
+</body>
+</html>

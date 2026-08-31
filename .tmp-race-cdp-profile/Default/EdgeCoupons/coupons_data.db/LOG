@@ -1,0 +1,5 @@
+2026/08/28-10:38:22.283 71f4 Creating DB C:\wamp64\www\test\.tmp-race-cdp-profile\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/08/28-10:38:22.305 71f4 Reusing MANIFEST C:\wamp64\www\test\.tmp-race-cdp-profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/08/28-10:38:22.845 733c Level-0 table #5: started
+2026/08/28-10:38:22.855 733c Level-0 table #5: 683273 bytes OK
+2026/08/28-10:38:22.858 733c Delete type=0 #3

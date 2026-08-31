@@ -1,0 +1,1 @@
+import{chooseAIMove}from"./chess-core.js";self.onmessage=event=>{const{state,depth,id}=event.data;try{self.postMessage({id,move:chooseAIMove(state,depth)})}catch(error){self.postMessage({id,error:String(error)})}};

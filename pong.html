@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head><script>(()=>{try{const saved=JSON.parse(localStorage.getItem("playgroundDataV2")||localStorage.getItem("playgroundDataV1")||"null");document.documentElement.dataset.pgAppearance=saved?.settings?.appearance==="light"?"light":"dark"}catch{document.documentElement.dataset.pgAppearance="dark"}})();</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Un Pong responsive jouable seul, à deux ou en mode IA contre IA.">
+  <title>Pong</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <meta name="theme-color" content="#ffd45a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/shared-features.css">
+</head>
+<body>
+  <main class="app" aria-labelledby="game-title">
+    <header class="app__header">
+      <div><p class="eyebrow">Arcade classique</p><h1 id="game-title">Pong</h1></div>
+      <div class="header-nav"><a class="home-link" href="index.html">Accueil</a><label class="sound-toggle" for="sound-toggle"><input id="sound-toggle" type="checkbox" checked><span>Son</span></label></div>
+    </header>
+    <section class="settings" aria-label="Réglages de la partie">
+      <label><span>Mode</span><select id="mode-select">
+        <option value="player-vs-ai">Joueur contre IA</option>
+        <option value="player-vs-player">Deux joueurs</option>
+        <option value="ai-vs-ai">IA contre IA</option>
+      </select></label>
+      <label><span>Difficulté</span><select id="difficulty-select">
+        <option value="easy">Facile</option><option value="normal" selected>Normale</option><option value="hard">Difficile</option>
+      </select></label>
+      <label><span>Score gagnant</span><select id="winning-score-select">
+        <option value="5">5 points</option><option value="10" selected>10 points</option><option value="15">15 points</option>
+      </select></label>
+    </section>
+    <div class="actions" aria-label="Commandes de la partie">
+      <button id="play-button" type="button" aria-pressed="false">▶ Jouer</button>
+      <button id="pause-button" type="button" disabled aria-pressed="true">⏸ Pause</button>
+      <button id="new-game-button" type="button">↻ Nouvelle partie</button>
+    </div>
+    <section class="game-shell" aria-label="Terrain de Pong">
+      <canvas id="pong-canvas" width="800" height="600" tabindex="0" aria-describedby="instructions canvas-help">
+        Votre navigateur ne permet pas d’afficher le terrain de Pong. Utilisez un navigateur récent.
+      </canvas>
+      <p id="canvas-help" class="sr-only">Le score et l’état de la partie sont annoncés sous le terrain.</p>
+    </section>
+    <div class="game-info">
+      <p id="instructions">Utilisez les flèches haut et bas, ou glissez sur le terrain.</p>
+      <p class="shortcut">Espace : jouer ou mettre en pause · Échap : pause</p>
+    </div>
+    <p id="live-status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+  </main>
+  <script type="module" src="js/main.js"></script>
+  <script src="js/site-features.js" defer></script><script src="js/site-upgrades.js" defer></script>
+</body>
+</html>

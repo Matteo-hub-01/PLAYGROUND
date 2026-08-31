@@ -1,0 +1,27 @@
+2026-08-28 12:09:26.382: [INFO] CurrentProfilePath: C:\wamp64\www\test\.edge-drift-check\Default
+2026-08-28 12:09:26.382: [INFO] Profiles total count: 1
+2026-08-28 12:09:26.382: [INFO] Profile: name=Profil 1 path=C:\wamp64\www\test\.edge-drift-check\Default lastActive=null
+2026-08-28 12:09:26.382: [INFO] LastUsedProfileDir: C:\wamp64\www\test\.edge-drift-check\Default
+2026-08-28 12:09:26.382: [INFO] VisibilityChanged: 0
+2026-08-28 12:09:26.405: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.406: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.407: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.407: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.408: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.409: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.410: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.411: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.411: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.412: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.429: [INFO] OnDoneLoading sync enabled: 0
+2026-08-28 12:09:26.429: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-08-28 12:09:26.429: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-08-28 12:09:26.429: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-08-28 12:09:26.435: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.671: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 12:09:26.674: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 12:09:26.685: [INFO] Primary account changed.
+2026-08-28 12:09:26.685: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-08-28 12:09:26.688: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 12:09:26.737: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 12:09:32.138: [INFO] Sync initialization duration: 4330ms

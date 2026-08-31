@@ -1,0 +1,12 @@
+[2026-08-28T08:38:19.660Z] [INFO] ========================================================================================================================
+[2026-08-28T08:38:19.661Z] [INFO] Initializing MAM Client.
+App: com.microsoft.edge 151.0.4129.107
+SDK: 2.1.367.0
+OS: windows 10.0.26200.9106
+DeviceType: Desktop
+Manufacturer: Dell Inc.
+Model: Latitude 5440
+Telemetry: yes
+Managed device support: enabled
+[2026-08-28T08:38:19.666Z] [INFO] Telemetry session 97c95995-761b-4ca0-a7e2-da2bb4db8e0b.
+[2026-08-28T08:38:19.667Z] [INFO] Initializing cache (v1).

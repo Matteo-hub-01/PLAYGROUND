@@ -1,0 +1,32 @@
+2026-08-28 08:00:35.334: [INFO] CurrentProfilePath: C:\wamp64\www\test\.tmp-cdp-profile\Default
+2026-08-28 08:00:35.334: [INFO] Profiles total count: 1
+2026-08-28 08:00:35.334: [INFO] Profile: name=Profil 1 path=C:\wamp64\www\test\.tmp-cdp-profile\Default lastActive=null
+2026-08-28 08:00:35.335: [INFO] LastUsedProfileDir: C:\wamp64\www\test\.tmp-cdp-profile\Default
+2026-08-28 08:00:35.335: [INFO] VisibilityChanged: 0
+2026-08-28 08:00:35.350: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.350: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.351: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.351: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.352: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.353: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.353: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.354: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.354: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.355: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.374: [INFO] OnDoneLoading sync enabled: 0
+2026-08-28 08:00:35.374: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-08-28 08:00:35.374: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-08-28 08:00:35.374: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-08-28 08:00:35.376: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.460: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-08-28 08:00:35.464: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:35.470: [INFO] Primary account changed.
+2026-08-28 08:00:35.470: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-08-28 08:00:35.474: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:35.550: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:35.748: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:36.221: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:36.239: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:36.241: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-08-28 08:00:36.242: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 4
+2026-08-28 08:00:36.963: [INFO] Sync initialization duration: 676ms
