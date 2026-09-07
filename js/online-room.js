@@ -8,3 +8,44 @@ export class OnlineRoom{
   async send(payload){if(!this.code)return;this.pending=payload;if(this.sending)return;this.sending=true;while(this.pending!==undefined&&this.code){const next=this.pending;this.pending=undefined;try{await this.request({action:"send",code:this.code,token:this.token,payload:next})}catch(error){this.onUpdate?.(null,{error:error.message});break}}this.sending=false}
   close(){clearInterval(this.timer);this.timer=0;this.code=this.token=this.role=""}
 }
+
+const clone=value=>{
+  if(typeof structuredClone==="function")return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+};
+
+/**
+ * Smooths visual coordinates between authoritative network snapshots. Gameplay
+ * decisions still come exclusively from the host; only the guest presentation
+ * is interpolated.
+ */
+export class NetworkStateSmoother{
+  constructor({response=.055,snapDistance=240}={}){this.response=response;this.snapDistance=snapDistance;this.current=null;this.target=null}
+  reset(){this.current=this.target=null}
+  push(state){
+    this.target=clone(state);
+    if(!this.current)this.current=clone(state);
+    return this.current
+  }
+  update(delta){
+    if(!this.target)return this.current;
+    const alpha=1-Math.exp(-Math.max(0,delta)/this.response);
+    this.current=this.blend(this.current,this.target,alpha);
+    return this.current
+  }
+  blend(current,target,alpha,key=""){
+    if(Array.isArray(target))return target.map((value,index)=>this.blend(current?.[index],value,alpha,key));
+    if(target&&typeof target==="object"){
+      const result={};
+      for(const property of Object.keys(target))result[property]=this.blend(current?.[property],target[property],alpha,property);
+      return result
+    }
+    const visual=/^(?:x|y|leftY|rightY|ballX|ballY)$/i.test(key);
+    if(visual&&Number.isFinite(current)&&Number.isFinite(target)){
+      if(Math.abs(target-current)>this.snapDistance)return target;
+      const value=current+(target-current)*alpha;
+      return Math.abs(target-value)<.01?target:value
+    }
+    return target
+  }
+}

@@ -1,5 +1,5 @@
 import { GAME_MODES, PongGame, playerLabels } from "./game-core.js";
-import { OnlineRoom } from "./online-room.js";
+import { NetworkStateSmoother, OnlineRoom } from "./online-room.js";
 
 const canvas = document.querySelector("#pong-canvas");
 const context = canvas.getContext("2d");
@@ -28,10 +28,11 @@ let audioContext = null;
 let lastFrameTime = performance.now();
 let previousSummary = "";
 let online=false,remoteTarget=null,lastOnlineSend=0;
+const networkState=new NetworkStateSmoother();
 const room=new OnlineRoom("pong",(payload,meta)=>{
   if(meta.error){roomStatus.textContent=meta.error;return}
   roomStatus.textContent=meta.connected?`Salon ${room.code} · adversaire connecté`:`Salon ${room.code} · en attente du second joueur…`;
-  if(room.role==="guest"&&payload?.state){game.state={...payload.state};game.winningScore=payload.winningScore||game.winningScore;render();updateInterface()}
+  if(room.role==="guest"&&payload?.state){game.state=networkState.push(payload.state);game.winningScore=payload.winningScore||game.winningScore;render();updateInterface()}
   if(room.role==="host"&&Number.isFinite(payload?.target))remoteTarget=payload.target;
 });
 
@@ -252,13 +253,13 @@ newGameButton.addEventListener("click", () => {
 
 modeSelect.addEventListener("change", () => {
   window.Playground?.reset();
-  online=modeSelect.value==="online";room.close();remoteTarget=null;
+  online=modeSelect.value==="online";room.close();remoteTarget=null;networkState.reset();
   game.setMode(online?GAME_MODES.PLAYER_VS_PLAYER:modeSelect.value);
   clearInput();
   updateInterface();
   announce("Mode changé. Nouvelle partie prête.");
 });
-async function enterRoom(action){try{const info=action==="create"?await room.create():await room.join(roomCode.value);online=true;game.setMode(GAME_MODES.PLAYER_VS_PLAYER);roomCode.value=info.code;roomStatus.textContent=`Code ${info.code} · ${info.role==="host"?"partagez-le":"connecté, vous jouez à droite"}`;updateInterface();if(info.role==="host")room.send({state:game.state,winningScore:game.winningScore})}catch(error){roomStatus.textContent=error.message}}
+async function enterRoom(action){try{networkState.reset();const info=action==="create"?await room.create():await room.join(roomCode.value);online=true;game.setMode(GAME_MODES.PLAYER_VS_PLAYER);roomCode.value=info.code;roomStatus.textContent=`Code ${info.code} · ${info.role==="host"?"partagez-le":"connecté, vous jouez à droite"}`;updateInterface();if(info.role==="host")room.send({state:game.state,winningScore:game.winningScore})}catch(error){roomStatus.textContent=error.message}}
 document.querySelector("#create-room").addEventListener("click",()=>enterRoom("create"));
 document.querySelector("#join-room").addEventListener("click",()=>enterRoom("join"));
 
@@ -368,7 +369,10 @@ function animationFrame(timestamp) {
       if(online)input.rightTarget=remoteTarget;
       game.update(delta,input);
       if(online&&timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({state:game.state,winningScore:game.winningScore})}
-    }else if(timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({target:input.rightTarget})}
+    }else{
+      const smoothed=networkState.update(delta);if(smoothed)game.state=smoothed;
+      if(timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({target:input.rightTarget})}
+    }
     processEvents();
     updateInterface();
     render();
