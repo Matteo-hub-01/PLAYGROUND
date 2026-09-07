@@ -2,6 +2,9 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: same-origin');
+if((int)($_SERVER['CONTENT_LENGTH']??0)>70000){http_response_code(413);echo json_encode(['error'=>'Requête trop volumineuse']);exit;}
 $root=sys_get_temp_dir().DIRECTORY_SEPARATOR.'playground-rooms';
 if(!is_dir($root)&&!mkdir($root,0770,true)&&!is_dir($root)){http_response_code(500);echo json_encode(['error'=>'Stockage indisponible']);exit;}
 function reply(array $data,int $status=200):never{http_response_code($status);echo json_encode($data,JSON_UNESCAPED_UNICODE);exit;}
@@ -10,7 +13,8 @@ function newCode():string{$chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';$value='';fo
 function roomPath(string $root,string $code):string{return $root.DIRECTORY_SEPARATOR.$code.'.json';}
 function readRoom(string $path):?array{if(!is_file($path))return null;$handle=fopen($path,'rb');if(!$handle)return null;if(!flock($handle,LOCK_SH)){fclose($handle);return null;}$room=json_decode((string)stream_get_contents($handle),true);flock($handle,LOCK_UN);fclose($handle);if(!is_array($room))return null;if(($room['expires']??0)<time()){@unlink($path);return null;}return $room;}
 $request=body();$action=(string)($request['action']??'');
-foreach(glob($root.DIRECTORY_SEPARATOR.'*.json')?:[] as $old)if(filemtime($old)<time()-21600)@unlink($old);
+if(random_int(1,100)===1)foreach(glob($root.DIRECTORY_SEPARATOR.'*.json')?:[] as $old)if(filemtime($old)<time()-21600)@unlink($old);
+if(in_array($action,['create','join'],true)){$ratePath=$root.DIRECTORY_SEPARATOR.'rate-'.hash('sha256',(string)($_SERVER['REMOTE_ADDR']??'local')).'.json';$now=time();$attempts=[];if(is_file($ratePath))$attempts=json_decode((string)file_get_contents($ratePath),true)?:[];$attempts=array_values(array_filter($attempts,fn($stamp)=>is_int($stamp)&&$stamp>$now-60));if(count($attempts)>=30)reply(['error'=>'Trop de tentatives. Réessayez dans une minute.'],429);$attempts[]=$now;file_put_contents($ratePath,json_encode($attempts),LOCK_EX);}
 if($action==='create'){$game=preg_replace('/[^a-z-]/','',(string)($request['game']??''));if(!in_array($game,['pong','chess','push-off'],true))reply(['error'=>'Jeu inconnu'],400);do{$code=newCode();$path=roomPath($root,$code);}while(is_file($path));$token=bin2hex(random_bytes(16));$room=['code'=>$code,'game'=>$game,'host'=>$token,'guest'=>null,'version'=>0,'stateVersion'=>0,'inputVersion'=>0,'state'=>null,'input'=>null,'expires'=>time()+21600];file_put_contents($path,json_encode($room),LOCK_EX);reply(['code'=>$code,'token'=>$token,'role'=>'host','version'=>0]);}
 $code=strtoupper(preg_replace('/[^A-Z0-9]/','',(string)($request['code']??'')));if(strlen($code)!==6)reply(['error'=>'Code invalide'],400);$path=roomPath($root,$code);$room=readRoom($path);if(!$room)reply(['error'=>'Salon introuvable ou expiré'],404);
 if($action==='join'){if(($room['game']??'')!==($request['game']??''))reply(['error'=>'Ce code appartient à un autre jeu'],409);if($room['guest'])reply(['error'=>'Ce salon est déjà complet'],409);$room['guest']=bin2hex(random_bytes(16));$room['expires']=time()+21600;file_put_contents($path,json_encode($room),LOCK_EX);reply(['code'=>$code,'token'=>$room['guest'],'role'=>'guest','version'=>$room['version']]);}

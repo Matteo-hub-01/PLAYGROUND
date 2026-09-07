@@ -15,6 +15,7 @@ const defaults={p1Left:"q",p1Right:"d",p1Jump:"z",p1Attack:"s",p1Dash:"a",
   p2Left:"ArrowLeft",p2Right:"ArrowRight",p2Jump:"ArrowUp",p2Attack:"ArrowDown",p2Dash:"ShiftRight"};
 let bindings=loadBindings(),listeningBinding=null,audioContext=null,lastTime=performance.now(),lastMessage="",selectedCharacters=[ui.character1.value,ui.character2.value],selectionConfirmed=false;
 let particles=[],trails=[],shake=0,flash=0;
+const backgroundGradients=new Map(),touchPanels=[...document.querySelectorAll(".touch-player")];let lastInterfaceSignature="",lastGamepadCount=-1;
 let online=false,remoteInput={},lastOnlineSend=0;const remoteSequence={jump:0,attack:0,release:0,dash:0},outgoingSequence={jump:0,attack:0,release:0,dash:0};
 const networkState=new NetworkStateSmoother();
 const room=new OnlineRoom("push-off",(payload,meta)=>{if(meta.error){ui.roomStatus.textContent=meta.error;return}ui.roomStatus.textContent=meta.connected?`Salon ${room.code} · adversaire connecté`:`Salon ${room.code} · en attente du joueur 2…`;if(room.role==="guest"&&payload?.state){game.state=networkState.push(payload.state);game.arena=payload.arena||game.arena;game.characters=payload.characters||game.characters;selectedCharacters=[...game.characters];selectionConfirmed=Boolean(payload.selectionConfirmed);ui.fighterSelect.hidden=true;render();updateInterface()}if(room.role==="host"&&payload?.controls){const c=payload.controls,s=payload.sequence||{};remoteInput={...c,jumpPressed:s.jump!==remoteSequence.jump,attackPressed:s.attack!==remoteSequence.attack,attackReleased:s.release!==remoteSequence.release,dashPressed:s.dash!==remoteSequence.dash};Object.assign(remoteSequence,s);if(payload.start&&selectionConfirmed&&!game.state.running)start()}});
@@ -60,7 +61,7 @@ function configureCanvas(){const cap=window.Playground?.quality==="low"?1:window
 function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
 function background(){
   const themes={classic:["#202a5b","#111a38"],islands:["#37478e","#161d45"],motion:["#522b72","#16112e"],chaos:["#7b283d","#1b0c22"]},colors=themes[game.arena];
-  const g=ctx.createLinearGradient(0,0,0,600);g.addColorStop(0,colors[0]);g.addColorStop(.7,colors[1]);g.addColorStop(1,"#080b18");ctx.fillStyle=g;ctx.fillRect(0,0,800,600);
+  let g=backgroundGradients.get(game.arena);if(!g){g=ctx.createLinearGradient(0,0,0,600);g.addColorStop(0,colors[0]);g.addColorStop(.7,colors[1]);g.addColorStop(1,"#080b18");backgroundGradients.set(game.arena,g)}ctx.fillStyle=g;ctx.fillRect(0,0,800,600);
   ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(665,105,38,0,Math.PI*2);ctx.fill();ctx.fillStyle="rgb(255 209 102 / 12%)";ctx.beginPath();ctx.arc(665,105,66,0,Math.PI*2);ctx.fill();
   ctx.fillStyle="#0b1128";const city=[[0,310,90,240],[80,355,100,190],[170,285,85,260],[250,340,115,200],[355,270,95,270],[445,335,120,210],[555,300,95,240],[640,345,100,195],[730,280,90,260]];
   for(const b of city)ctx.fillRect(...b);
@@ -162,7 +163,7 @@ function pollGamepads(){
   for(let i=0;i<2;i++){const pad=pads[i];if(!pad)continue;connected++;const previous=gamepadPrevious[i],pressed=pad.buttons.map(b=>b.pressed);
     result[i]={left:pad.axes[0]<-.3,right:pad.axes[0]>.3,jumpPressed:pressed[0]&&!previous[0],attackPressed:pressed[2]&&!previous[2],
       attackHeld:pressed[2],attackReleased:!pressed[2]&&previous[2],dashPressed:pressed[1]&&!previous[1]};gamepadPrevious[i]=pressed}
-  ui.gamepad.textContent=connected?"Manette : "+connected+" détectée(s)":"Manette : aucune détectée";return result;
+  if(connected!==lastGamepadCount){lastGamepadCount=connected;ui.gamepad.textContent=connected?"Manette : "+connected+" détectée(s)":"Manette : aucune détectée"}return result;
 }
 function combinedInputs(){
   const pads=pollGamepads();return[0,1].map(i=>({left:keys.has(mapped(i,"left"))||touch[i].left||pads[i].left,
@@ -171,10 +172,11 @@ function combinedInputs(){
     attackReleased:actions[i].attackReleased||pads[i].attackReleased,dashPressed:actions[i].dashPressed||pads[i].dashPressed}))}
 function resetActions(){for(const a of actions){a.jumpPressed=a.attackPressed=a.attackReleased=a.dashPressed=false}}
 function updateInterface(){
+  const signature=[game.state.running,game.mode,online,room.role,...game.characters,selectionConfirmed,...Object.values(bindings)].join("|");if(signature===lastInterfaceSignature)return;lastInterfaceSignature=signature;
   document.body.classList.toggle("game-active",game.state.running);
   ui.play.disabled=game.state.running;ui.pause.disabled=!game.state.running||online&&room.role==="guest";ui.difficulty.disabled=game.mode===ARENA_MODES.PLAYER_VS_PLAYER;
-  ui.onlinePanel.hidden=!online;const panels=[...document.querySelectorAll(".touch-player")],labels=arenaLabels(game.mode);panels[0].classList.toggle("is-hidden",game.mode===ARENA_MODES.AI_VS_AI||online&&room.role==="guest");panels[1].classList.toggle("is-hidden",game.mode!==ARENA_MODES.PLAYER_VS_PLAYER||online&&room.role!=="guest");
-  panels.forEach((panel,index)=>panel.querySelector("strong").textContent=labels[index]+" · "+CHARACTERS[game.characters[index]].name);
+  ui.onlinePanel.hidden=!online;const labels=arenaLabels(game.mode);touchPanels[0].classList.toggle("is-hidden",game.mode===ARENA_MODES.AI_VS_AI||online&&room.role==="guest");touchPanels[1].classList.toggle("is-hidden",game.mode!==ARENA_MODES.PLAYER_VS_PLAYER||online&&room.role!=="guest");
+  touchPanels.forEach((panel,index)=>panel.querySelector("strong").textContent=labels[index]+" · "+CHARACTERS[game.characters[index]].name);
   ui.instructions.textContent=game.mode===ARENA_MODES.PLAYER_VS_PLAYER?"J1 : "+prettyKey(bindings.p1Left)+"/"+prettyKey(bindings.p1Right)+", "+prettyKey(bindings.p1Jump)+" saut, "+prettyKey(bindings.p1Attack)+" attaque, "+prettyKey(bindings.p1Dash)+" dash · J2 : flèches + "+prettyKey(bindings.p2Dash)+" dash":
     game.mode===ARENA_MODES.AI_VS_AI?"Mode automatique : arène choisie aléatoirement à chaque partie.":"Joueur : "+prettyKey(bindings.p1Left)+"/"+prettyKey(bindings.p1Right)+", "+prettyKey(bindings.p1Jump)+" saut, "+prettyKey(bindings.p1Attack)+" attaque, "+prettyKey(bindings.p1Dash)+" dash.";if(online)ui.instructions.textContent=room.role==="guest"?"Vous contrôlez le combattant rose (joueur 2).":"Vous contrôlez le combattant vert (joueur 1). Partagez le code du salon.";
 }
@@ -214,5 +216,5 @@ for(const button of document.querySelectorAll("[data-action]")){
 window.addEventListener("playground:replay",()=>{window.Playground?.reset();openFighterSelection("Choisissez les combattants pour la revanche.",true)});
 window.addEventListener("blur",clearInputs);window.addEventListener("resize",configureCanvas,{passive:true});window.addEventListener("playground:quality",()=>{configureCanvas();render()});window.addEventListener("gamepadconnected",()=>announce("Manette connectée."));
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&game.state.running)pauseGame("Partie mise en pause.")});
-function frame(timestamp){const dt=Math.min((timestamp-lastTime)/1000,.05);lastTime=timestamp;window.Playground?.frame(dt);const inputs=combinedInputs();if(online&&room.role==="guest"){const control=inputs[1];if(control.jumpPressed)outgoingSequence.jump++;if(control.attackPressed)outgoingSequence.attack++;if(control.attackReleased)outgoingSequence.release++;if(control.dashPressed)outgoingSequence.dash++;const smoothed=networkState.update(dt);if(smoothed)game.state=smoothed;updateInterface();render(dt);if(timestamp-lastOnlineSend>45){lastOnlineSend=timestamp;room.send({controls:{left:control.left,right:control.right,attackHeld:control.attackHeld},sequence:outgoingSequence})}}else if(game.state.running){game.update(dt,online?[inputs[0],remoteInput]:inputs);remoteInput.jumpPressed=remoteInput.attackPressed=remoteInput.attackReleased=remoteInput.dashPressed=false;processEvents();updateInterface();render(dt);if(online&&timestamp-lastOnlineSend>45){lastOnlineSend=timestamp;room.send(onlineState())}}resetActions();requestAnimationFrame(frame)}
+function frame(timestamp){const dt=Math.min((timestamp-lastTime)/1000,.05);lastTime=timestamp;window.Playground?.frame(dt);const inputs=combinedInputs();if(online&&room.role==="guest"){const control=inputs[1];if(control.jumpPressed)outgoingSequence.jump++;if(control.attackPressed)outgoingSequence.attack++;if(control.attackReleased)outgoingSequence.release++;if(control.dashPressed)outgoingSequence.dash++;const smoothed=networkState.update(dt);if(smoothed)game.state=smoothed;updateInterface();render(dt);if(timestamp-lastOnlineSend>80){lastOnlineSend=timestamp;room.send({controls:{left:control.left,right:control.right,attackHeld:control.attackHeld},sequence:outgoingSequence})}}else if(game.state.running){game.update(dt,online?[inputs[0],remoteInput]:inputs);remoteInput.jumpPressed=remoteInput.attackPressed=remoteInput.attackReleased=remoteInput.dashPressed=false;processEvents();updateInterface();render(dt);if(online&&timestamp-lastOnlineSend>80){lastOnlineSend=timestamp;room.send(onlineState())}}resetActions();requestAnimationFrame(frame)}
 renderBindings();configureCanvas();game.consumeEvents();renderFighterSelection();openFighterSelection("Choisissez votre combattant pour commencer.");render();requestAnimationFrame(frame);

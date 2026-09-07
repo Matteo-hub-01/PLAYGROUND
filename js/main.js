@@ -28,6 +28,7 @@ let audioContext = null;
 let lastFrameTime = performance.now();
 let previousSummary = "";
 let online=false,remoteTarget=null,lastOnlineSend=0;
+let lastInterfaceSignature="";
 const networkState=new NetworkStateSmoother();
 const room=new OnlineRoom("pong",(payload,meta)=>{
   if(meta.error){roomStatus.textContent=meta.error;return}
@@ -144,6 +145,7 @@ function announce(message) {
 
 function updateInterface() {
   const running = game.state.running;
+  const signature=[running,game.mode,online,room.role,modeSelect.value].join("|");if(signature===lastInterfaceSignature)return;lastInterfaceSignature=signature;
   document.body.classList.toggle("game-active", running);
   playButton.disabled = running;
   pauseButton.disabled = !running;
@@ -368,10 +370,10 @@ function animationFrame(timestamp) {
     if(!online||room.role==="host"){
       if(online)input.rightTarget=remoteTarget;
       game.update(delta,input);
-      if(online&&timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({state:game.state,winningScore:game.winningScore})}
+      if(online&&timestamp-lastOnlineSend>80){lastOnlineSend=timestamp;room.send({state:game.state,winningScore:game.winningScore})}
     }else{
       const smoothed=networkState.update(delta);if(smoothed)game.state=smoothed;
-      if(timestamp-lastOnlineSend>65){lastOnlineSend=timestamp;room.send({target:input.rightTarget})}
+      if(timestamp-lastOnlineSend>80){lastOnlineSend=timestamp;room.send({target:input.rightTarget})}
     }
     processEvents();
     updateInterface();
